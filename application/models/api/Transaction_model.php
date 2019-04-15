@@ -13,7 +13,7 @@ class Transaction_model extends CI_Model {
 	}
 
 	function update_transaction($data, $condition){
-		return $this->db->insert('transaction', $data, $condition);
+		return $this->db->update('transaction', $data, $condition);
 	}
 	
 

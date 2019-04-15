@@ -12,6 +12,8 @@ class Transaction extends REST_Controller {
 	{
 		parent::__construct();
 		$this->load->model('api/Transaction_model', 'trx');
+		$this->load->model('api/Bank_model', 'bank');
+		$this->load->model('api/User_model', 'user');
 		$this->load->helper('string');
 	}
 
@@ -23,6 +25,12 @@ class Transaction extends REST_Controller {
 		), REST_Controller::HTTP_NOT_FOUND);
 	}
 
+	public function bank_get(){
+
+		$bank = $this->bank->get_bank()->result_array();
+		$this->set_response(['status'=>TRUE, 'result'=>$bank], REST_Controller::HTTP_OK);
+	}
+
 	public function list_get(){
 
 		$user_id = $this->get('user_id');
@@ -31,7 +39,9 @@ class Transaction extends REST_Controller {
 			$this->response(['status'=>FALSE, 'result'=>'user id tidak boleh kosong'], REST_Controller::HTTP_BAD_REQUEST);
 		}
 
-		if($user_id == 1){
+		$user = $this->user->get_user(['user_id'=>$user_id])->row();
+
+		if($user->role_id == 1){
 			$result = $this->trx->get_transaction()->result();
 		} else {
 			$result = $this->trx->get_transaction(['user_id'=> $user_id])->result();
@@ -48,9 +58,7 @@ class Transaction extends REST_Controller {
 
 		$user_id = $this->post('user_id');
 		$amount = $this->post('amount');
-		$name = $this->post('fullname');
-		$number = $this->post('number');
-		$receipt = $this->post('receipt');
+		$bank_id = $this->post('bank_id');
 
 		if(empty($user_id)){
 			$this->response(['status'=>FALSE, 'result'=>'user id tidak boleh kosong'], REST_Controller::HTTP_BAD_REQUEST);
@@ -75,8 +83,37 @@ class Transaction extends REST_Controller {
 		$params['transaction_no'] = $no_trx;
 		$params['user_id'] = $user_id;
 		$params['transaction_amount'] = $amount;
+		$params['bank_id'] = $bank_id;
+
+		$this->trx->insert_transaction($params);
+
+		$message['status'] = TRUE;
+		$message['result'] = 'Transaksi berhasil, silahkan konfirmasi setoran';
+		$this->set_response($message, REST_Controller::HTTP_CREATED); 
+	}
+
+	public function confirm_post(){
+
+		$transaction_id = $this->post('transaction_id');
+		$name = $this->post('fullname');
+		$number = $this->post('number');
+		$receipt = $this->post('receipt');
+
+		if(empty($transaction_id)){
+			$this->response(['status'=>FALSE, 'result'=>'id tidak boleh kosong'], REST_Controller::HTTP_BAD_REQUEST);
+		}
+
+		if(empty($name)){
+			$this->response(['status'=>FALSE, 'result'=>'Nama pengirim tidak boleh kosong'], REST_Controller::HTTP_BAD_REQUEST);
+		}
+
+		if(empty($number)){
+			$this->response(['status'=>FALSE, 'result'=>'Nomor rekening pengirim tidak boleh kosong'], REST_Controller::HTTP_BAD_REQUEST);
+		}
+
 		$params['transaction_acc_name'] = $name;
 		$params['transaction_acc_number'] = $number;
+		$params['transaction_status'] = 1;
 
 		if(!empty($receipt)){
 			$image_file   	= time().rand(1111,9999).".png";
@@ -90,10 +127,10 @@ class Transaction extends REST_Controller {
 
 		$params['transaction_receipt'] = isset($image_file) ? $image_file : 'no_image.png';
 
-		$this->trx->insert_transaction($params);
+		$this->trx->update_transaction($params, ['transaction_id'=>$transaction_id]);
 
 		$message['status'] = TRUE;
-		$message['result'] = 'Transaksi berhasil, mohon tunggu konfirmasi berikutnya';
+		$message['result'] = 'konfirmasi berhasil, mohon tunggu konfirmasi berikutnya';
 		$this->set_response($message, REST_Controller::HTTP_CREATED); 
 	}
 
