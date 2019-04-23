@@ -78,6 +78,7 @@ class Transaction extends REST_Controller {
 			$no = substr($lastno['transaction_no'], 0, 4);
 			$nomor = sprintf('%04d', $no + 0001);
 			$no_trx = $nomor .'/AR-'. date('Ym');
+
 		}
 
 		$params['transaction_no'] = $no_trx;

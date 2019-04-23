@@ -93,6 +93,22 @@ class User extends REST_Controller {
 		}
 	}
 
+	public function check_saldo_get(){
+		$user_id = $this->get('user_id');
+
+		if(empty($user_id)){
+			$this->response(['status'=>FALSE, 'result'=>'User tidak boleh kosong'], REST_Controller::HTTP_BAD_REQUEST);
+		}
+
+		$user = $this->user->get_user(['user_id'=>$user_id])->row();
+		$res['saldo'] = $user->user_saldo;
+		if(count($user) > 0) {
+			$this->set_response(['status'=>TRUE, 'result'=>$res], REST_Controller::HTTP_OK); 
+		} else {
+			$this->set_response(['status'=>TRUE, 'result'=>'Tidak ditemukan'], REST_Controller::HTTP_BAD_REQUEST); 
+		}
+	}
+
 }
 
 /* End of file User.php */

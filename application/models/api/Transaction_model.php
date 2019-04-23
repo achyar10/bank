@@ -5,6 +5,7 @@ class Transaction_model extends CI_Model {
 
 	
 	function get_transaction($arr=null, $limit=null, $offset=null){
+		$this->db->order_by('transaction_created_at', 'desc');
 		return $this->db->get_where('transaction', $arr, $limit, $offset);
 	}
 
