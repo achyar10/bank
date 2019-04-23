@@ -118,7 +118,7 @@ class Transaction extends REST_Controller {
 		if(!empty($receipt)){
 			$image_file   	= time().rand(1111,9999).".png";
 			$decoded_image = base64_decode($receipt);
-			$upload_image 	= file_put_contents('./uploads/employee/'.$image_file, $decoded_image);
+			$upload_image 	= file_put_contents('./uploads/trx/'.$image_file, $decoded_image);
 
 			if($upload_image === false){
 				throw new Exception("Error uploading image");
