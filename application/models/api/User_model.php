@@ -15,6 +15,11 @@ class User_model extends CI_Model {
 		return $this->db->insert('user', $data, $condition);
 	}
 
+	function update_saldo($user_id, $value){
+		return $this->db->set('user_saldo', "user_saldo+$value" , FALSE)->where('user_id', $user_id)
+        ->update('user');
+	}
+
 
 }
 

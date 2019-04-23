@@ -81,16 +81,33 @@ class Transaction extends REST_Controller {
 
 		}
 
+		$sub = substr($amount, -3);
+		$sub2 = substr($amount, -2);
+		$sub3 = substr($amount, -1);
+
+		$total =  random_string('numeric', 3);
+		$total2 =  random_string('numeric', 2);
+		$total3 =  random_string('numeric', 1);
+
+		if($sub == 0){
+			$params['transaction_amount'] = $amount + $total;
+		} elseif($sub2 == 0) {
+			$params['transaction_amount'] = $amount + $total2;
+		} elseif($sub3 == 0){
+			$params['transaction_amount'] = $amount + $total3;
+		} else {
+			$params['transaction_amount'] = $sub;
+		}
+
 		$params['transaction_no'] = $no_trx;
 		$params['user_id'] = $user_id;
-		$params['transaction_amount'] = $amount;
 		$params['bank_id'] = $bank_id;
 
 		$this->trx->insert_transaction($params);
 
 		$message['status'] = TRUE;
 		$message['result'] = 'Transaksi berhasil, silahkan konfirmasi setoran';
-		$this->set_response($message, REST_Controller::HTTP_CREATED); 
+		$this->set_response($params, REST_Controller::HTTP_CREATED); 
 	}
 
 	public function confirm_post(){
@@ -134,6 +151,65 @@ class Transaction extends REST_Controller {
 		$message['result'] = 'konfirmasi berhasil, mohon tunggu konfirmasi berikutnya';
 		$this->set_response($message, REST_Controller::HTTP_CREATED); 
 	}
+
+	function check_auto_get(){
+		require APPPATH . 'libraries/src/CekBNI.php';
+		$config = [
+			'credential' => [
+				'username' => 'achyaran1012',
+				'password' => 'admin234'
+			],
+        'nomor_rekening' => '0400661273', //No. Rekening
+        'range' => [
+        	'tgl_akhir' => date('d-M-Y',strtotime(date('Y-m-d'))),
+        	'tgl_awal' => date('d-M-Y',strtotime(date('Y-m-d')))
+        ],
+    ];
+
+    $bni = new CekBNI($config);
+    $tes = $bni->toArray();
+
+    $res = array();
+    foreach ($tes as $row) {
+    	array_push($res, [
+    		'mutasi' => $row[2],
+    		'amount' => $this->idr($row[3]),
+    		'saldo' => $this->idr($row[4])
+    	]);
+    }
+
+    for ($i = 0; $i < count($res); $i++) {
+    	if($res[$i]['mutasi'] != 'Db') {
+    		$this->approve($res[$i]['amount']);
+    	}
+    }
+}
+
+function approve($amount){
+
+	if($amount == null){
+		echo 'Data tidak ditemukan';
+	}
+
+	$trx = $this->trx->get_transaction(['transaction_amount'=> $amount, 'transaction_status'=>0, 'DATE(transaction_created_at)'=>date('Y-m-d')])->row();
+
+	if(count($trx) > 0){
+		$this->user->update_saldo($trx->user_id, $trx->transaction_amount);
+		$this->bank->update_bank($trx->bank_id, $trx->transaction_amount);
+
+		$params['transaction_status'] = 2;
+		$this->trx->update_transaction($params, ['transaction_amount'=>$amount, 'DATE(transaction_created_at)'=>date('Y-m-d')]);
+		echo 'Approve Berhasil Rp. '.number_format($trx->transaction_amount).'<br>';
+	} else {
+		echo 'Tidak ada dana masuk <br>';
+	}
+}
+
+function idr($nominal){
+	$res = substr($nominal, 3,-3);
+	$result = preg_replace("/[^0-9]/", "", $res);
+	return $result;
+}
 
 }
 

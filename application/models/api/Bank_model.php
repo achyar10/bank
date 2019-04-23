@@ -8,7 +8,7 @@ class Bank_model extends CI_Model {
 	}
 
 	function update_bank($bank_id, $value){
-		return $this->db->set('bank_saldo', "bank_saldo+$value" , FALSE)->where('bank_id', $cardno)
+		return $this->db->set('bank_saldo', "bank_saldo+$value" , FALSE)->where('bank_id', $bank_id)
         ->update('bank');
 	}
 
