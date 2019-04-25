@@ -107,7 +107,7 @@ class Transaction extends REST_Controller {
 
 		$message['status'] = TRUE;
 		$message['result'] = 'Transaksi berhasil, silahkan konfirmasi setoran';
-		$this->set_response($params, REST_Controller::HTTP_CREATED); 
+		$this->set_response($message, REST_Controller::HTTP_CREATED); 
 	}
 
 	public function confirm_post(){
